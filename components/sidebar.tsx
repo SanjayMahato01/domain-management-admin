@@ -3,13 +3,14 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, Globe, Server, Mail, BarChart3, Settings, Menu, X, ChevronLeft } from "lucide-react"
+import { LayoutDashboard,Users, Globe, Server, Mail, BarChart3, Settings, Menu, X, ChevronLeft, MonitorSpeaker } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "dashboard", icon: LayoutDashboard },
   { name: "Users", href: "users", icon: Users },
   { name: "Domains", href: "domains", icon: Globe },
   { name: "Hosting", href: "hosting", icon: Server },
+  { name: "VMS", href: "vms", icon: MonitorSpeaker },
   { name: "Email", href: "email", icon: Mail },
   { name: "Analytics", href: "analytics", icon: BarChart3 },
   { name: "Settings", href: "settings", icon: Settings },
@@ -26,7 +27,7 @@ export function Sidebar({ activeSection, setActiveSection, setSidebarOpen }: Adm
 
   const handleNavClick = (section: string) => {
     setActiveSection(section)
-    setSidebarOpen?.(false) // Close mobile sidebar after selection
+    setSidebarOpen?.(false) 
   }
 
   return (

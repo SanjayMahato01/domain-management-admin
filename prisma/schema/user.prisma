@@ -1,0 +1,152 @@
+model Admin {
+  id       Int    @id @default(autoincrement())
+  name     String @db.VarChar(255)
+  username String @unique @db.VarChar(255)
+  password String @db.VarChar(255)
+
+  @@map("admin") 
+}
+
+
+model User {
+  id                       String             @id @default(cuid())
+  fullName                 String
+  email                    String             @unique
+  password                 String?
+  verified                 Boolean            @default(false)
+  otp                      String?
+  otpExpiry                DateTime?
+  emailVerified            DateTime?
+  image                    String?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  dreamscapeProviderUserId String?
+  carts                    Cart[]
+  hostingsPurchased        HostingPurchased[]
+  accounts                 Account[]
+  billings                 Billing[]
+  domainPurchased          DomainPurchased[]
+  status                   UserStatus? @map("ACTIVE")
+  @@map("users")
+}
+
+model Account {
+  id                String @id @default(cuid())
+  userId            String @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String @map("provider_account_id")
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Cart {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  domainName String
+  price      Int
+  validity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cart")
+}
+
+model DomainPurchased {
+  id                String             @id @default(cuid())
+  userId            String
+  firstName         String
+  lastName          String
+  email             String
+  address           String
+  domainName        String
+  price             Float
+  expiryDate        DateTime
+  validity          Int
+  currency          String             @default("INR")
+  razorpayOrderId   String?
+  razorpayPaymentId String
+  paymentMethod     String?
+  paymentStatus     String             @default("success")
+  purchaseDate      DateTime           @default(now())
+  providerName      DomainProviderName @default(DREAMSCAPE)
+  billing           Billing?
+  user              User               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@map("domain_purchased")
+}
+
+model HostingPurchased {
+  id           String        @id @default(cuid())
+  userId       String
+  domain       String
+  username     String        @unique
+  plan         String
+  contactemail String
+  expiryDate   DateTime
+  status       HostingStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  user         User          @relation(fields: [userId], references: [id])
+  
+  @@map("hosting_purchased")
+}
+
+model Billing {
+  id               String           @id
+  userId           String           @map("user_id")
+  domainPurchaseId String?          @unique @map("domain_purchase_id")
+  date             DateTime         @default(now())
+  amount           Float
+  status           String           @default("paid")
+  service          String
+  type             BillingType
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  domainPurchased  DomainPurchased? @relation(fields: [domainPurchaseId], references: [id])
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([domainPurchaseId])
+  @@map("billings")
+}
+
+model Tax {
+  id    String @id
+  name  String
+  value String
+
+  @@map("tax")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPEND
+  INACTIVE
+}
+ 
+enum HostingStatus {
+  ACTIVE
+  SUSPEND
+  TERMINATE
+}
+
+enum DomainProviderName {
+  COSMOTOWN
+  NAMECHEAP
+  GODADDY
+  DREAMSCAPE
+}
+
+enum BillingType {
+  domain
+  hosting
+  email
+  ssl
+  other
+}

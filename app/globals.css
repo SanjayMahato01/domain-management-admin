@@ -4,73 +4,75 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Modern clean design tokens for hosting admin panel */ /* Clean white background */ /* Professional dark gray text */
-  --card: oklch(1 0 0); /* Light gray card backgrounds */
-  --card-foreground: oklch(0.145 0 0); /* Dark text on cards */
-  --popover: oklch(1 0 0); /* White popover background */
-  --popover-foreground: oklch(0.145 0 0); /* Dark text on popovers */
-  --primary: oklch(0.205 0 0); /* Modern blue primary */
-  --primary-foreground: oklch(0.985 0 0); /* White text on primary */
-  --secondary: oklch(0.97 0 0); /* Light blue-gray secondary */
-  --secondary-foreground: oklch(0.205 0 0); /* Darker text on secondary */
-  --muted: oklch(0.97 0 0); /* Subtle muted backgrounds */
-  --muted-foreground: oklch(0.556 0 0); /* Muted text color */
-  --accent: oklch(0.97 0 0); /* Cyan accent color */
-  --accent-foreground: oklch(0.205 0 0); /* White text on accent */
-  --destructive: oklch(0.577 0.245 27.325); /* Clean red for errors */
+  /* Modern clean design tokens for hosting admin panel */
+  --background: #ffffff; /* Clean white background */
+  --foreground: #374151; /* Professional dark gray text */
+  --card: #f8fafc; /* Light gray card backgrounds */
+  --card-foreground: #374151; /* Dark text on cards */
+  --popover: #ffffff; /* White popover background */
+  --popover-foreground: #374151; /* Dark text on popovers */
+  --primary: #0ea5e9; /* Modern blue primary */
+  --primary-foreground: #ffffff; /* White text on primary */
+  --secondary: #f1f5f9; /* Light blue-gray secondary */
+  --secondary-foreground: #475569; /* Darker text on secondary */
+  --muted: #f8fafc; /* Subtle muted backgrounds */
+  --muted-foreground: #64748b; /* Muted text color */
+  --accent: #06b6d4; /* Cyan accent color */
+  --accent-foreground: #ffffff; /* White text on accent */
+  --destructive: #ef4444; /* Clean red for errors */
   --destructive-foreground: #ffffff; /* White text on destructive */
-  --border: oklch(0.922 0 0); /* Light border color */
-  --input: oklch(0.922 0 0); /* White input backgrounds */
-  --ring: oklch(0.708 0 0); /* Blue focus ring */
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0); /* Light sidebar background */
-  --sidebar-foreground: oklch(0.145 0 0); /* Dark sidebar text */
-  --sidebar-primary: oklch(0.205 0 0); /* Blue sidebar accent */
-  --sidebar-primary-foreground: oklch(0.985 0 0); /* White text on sidebar primary */
-  --sidebar-accent: oklch(0.97 0 0); /* Light sidebar accent */
-  --sidebar-accent-foreground: oklch(0.205 0 0); /* Dark text on sidebar accent */
-  --sidebar-border: oklch(0.922 0 0); /* Light sidebar border */
-  --sidebar-ring: oklch(0.708 0 0); /* Blue sidebar focus ring */ --background: oklch(1 0 0); --foreground: oklch(0.145 0 0);
+  --border: #e2e8f0; /* Light border color */
+  --input: #ffffff; /* White input backgrounds */
+  --ring: rgba(14, 165, 233, 0.3); /* Blue focus ring */
+  --chart-1: #0ea5e9;
+  --chart-2: #06b6d4;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --radius: 0.75rem;
+  --sidebar: #f8fafc; /* Light sidebar background */
+  --sidebar-foreground: #374151; /* Dark sidebar text */
+  --sidebar-primary: #0ea5e9; /* Blue sidebar accent */
+  --sidebar-primary-foreground: #ffffff; /* White text on sidebar primary */
+  --sidebar-accent: #f1f5f9; /* Light sidebar accent */
+  --sidebar-accent-foreground: #475569; /* Dark text on sidebar accent */
+  --sidebar-border: #e2e8f0; /* Light sidebar border */
+  --sidebar-ring: rgba(14, 165, 233, 0.3); /* Blue sidebar focus ring */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
+  --primary: #0ea5e9;
+  --primary-foreground: #ffffff;
+  --secondary: #334155;
+  --secondary-foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #06b6d4;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: #334155;
+  --input: #1e293b;
+  --ring: rgba(14, 165, 233, 0.3);
+  --chart-1: #0ea5e9;
+  --chart-2: #06b6d4;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --sidebar: #1e293b;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #0ea5e9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #f1f5f9;
+  --sidebar-border: #334155;
+  --sidebar-ring: rgba(14, 165, 233, 0.3);
 }
 
 @theme inline {
@@ -176,14 +178,5 @@
 
   .loading-bar {
     animation: loading-bar 0.8s ease-out forwards;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
