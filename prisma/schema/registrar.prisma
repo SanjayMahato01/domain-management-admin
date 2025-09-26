@@ -4,6 +4,7 @@ model Registrar {
     website              String
     apiEndpoint          String
     sandboxApiEndpoint   String
+    apiKey               String
     commissionPercentage Float?
     status               Status    @default(ACTIVE)
     sandboxMode          Boolean   @default(false)

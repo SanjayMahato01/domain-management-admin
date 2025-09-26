@@ -1,10 +1,11 @@
 "use client"
 
+import type React from "react"
 import { useState, useEffect } from "react"
-import { useForm, UseFormRegister, FieldErrors, UseFormSetValue } from "react-hook-form"
+import { useForm, type UseFormRegister, type FieldErrors, type UseFormSetValue } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import axios, { AxiosError } from "axios"
+import type { AxiosError } from "axios"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,7 +28,6 @@ import {
   Edit,
   Trash2,
   Building,
-  Key,
   Globe,
   CheckCircle,
   XCircle,
@@ -38,8 +38,8 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react"
+import axios from "axios"
 
-// Types
 export type Status = "ACTIVE" | "INACTIVE"
 
 export interface Registrar {
@@ -48,6 +48,7 @@ export interface Registrar {
   website: string
   apiEndpoint: string
   sandboxApiEndpoint: string
+  apiKey: string
   commissionPercentage: number | null
   status: Status
   sandboxMode: boolean
@@ -63,18 +64,6 @@ export interface ApiResponse<T = any> {
   message?: string
 }
 
-export interface TestConnectionResponse {
-  success: boolean
-  status: 'connected' | 'disconnected' | 'timeout' | 'error'
-  message: string
-  details?: {
-    statusCode?: number
-    responseTime?: string
-    error?: string
-    code?: string
-  }
-}
-
 export interface ApiError {
   response?: {
     data?: {
@@ -85,28 +74,20 @@ export interface ApiError {
   message: string
 }
 
-// Zod validation schema
 const registrarSchema = z.object({
-  name: z.string()
-    .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must be less than 50 characters"),
-  website: z.string()
-    .url("Please enter a valid URL")
-    .min(1, "Website is required"),
-  apiEndpoint: z.string()
-    .url("Please enter a valid API endpoint URL")
-    .min(1, "API endpoint is required"),
-  sandboxApiEndpoint: z.string()
-    .url("Please enter a valid sandbox API endpoint URL")
-    .optional()
-    .or(z.literal("")),
-  commissionPercentage: z.string()
+  name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
+  website: z.string().url("Please enter a valid URL").min(1, "Website is required"),
+  apiEndpoint: z.string().url("Please enter a valid API endpoint URL").min(1, "API endpoint is required"),
+  sandboxApiEndpoint: z.string().url("Please enter a valid sandbox API endpoint URL").optional().or(z.literal("")),
+  apiKey: z.string().min(1, "API key is required").max(500, "API key must be less than 500 characters"),
+  commissionPercentage: z
+    .string()
     .optional()
     .refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100), {
-      message: "Commission must be between 0 and 100"
+      message: "Commission must be between 0 and 100",
     }),
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
-  sandboxMode: z.boolean().default(false)
+  sandboxMode: z.boolean().default(false),
 })
 
 export type RegistrarFormData = z.infer<typeof registrarSchema>
@@ -119,12 +100,11 @@ interface RegistrarFormProps {
   watchedSandboxMode: boolean
 }
 
-export  function RegistrarManagement() {
+export function RegistrarManagement() {
   const [registrars, setRegistrars] = useState<Registrar[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false)
   const [editingRegistrar, setEditingRegistrar] = useState<Registrar | null>(null)
-  const [testingConnections, setTestingConnections] = useState<Set<number>>(new Set())
 
   // Form for create/edit
   const {
@@ -133,13 +113,13 @@ export  function RegistrarManagement() {
     reset,
     setValue,
     watch,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting },
   } = useForm<RegistrarFormData>({
     resolver: zodResolver(registrarSchema),
     defaultValues: {
       status: "ACTIVE",
-      sandboxMode: false
-    }
+      sandboxMode: false,
+    },
   })
 
   // Watch form values for controlled components
@@ -154,7 +134,7 @@ export  function RegistrarManagement() {
   const fetchRegistrars = async (): Promise<void> => {
     try {
       setLoading(true)
-      const response = await axios.get<ApiResponse<Registrar[]>>('/api/registrar/fetch-all-registrar')
+      const response = await axios.get<ApiResponse<Registrar[]>>("/api/registrar/fetch-all-registrar")
       if (response.data.success && response.data.data) {
         setRegistrars(response.data.data)
       }
@@ -172,14 +152,15 @@ export  function RegistrarManagement() {
       const payload = {
         ...data,
         sandboxApiEndpoint: data.sandboxApiEndpoint || data.apiEndpoint,
-        commissionPercentage: data.commissionPercentage ? Number(data.commissionPercentage) : null
+        commissionPercentage: data.commissionPercentage ? Number(data.commissionPercentage) : null,
+        apiKey: data.apiKey,
       }
 
-      const response = await axios.post<ApiResponse<Registrar>>('/api/registrar/create-new-registrar', payload)
-      
-      if (response.data.success && response.data.data) {
-        toast.success(response.data.message || "Registrar created successfully")
-        setRegistrars(prev => [...prev, response.data.data!])
+      const response = await axios.post<ApiResponse<Registrar>>("/api/registrar/create-new-registrar", payload)
+
+      if (response.data.success) {
+        toast.success("Registrar created successfully")
+        fetchRegistrars()
         setIsCreateDialogOpen(false)
         reset()
       }
@@ -196,16 +177,15 @@ export  function RegistrarManagement() {
       const payload = {
         ...data,
         sandboxApiEndpoint: data.sandboxApiEndpoint || data.apiEndpoint,
-        commissionPercentage: data.commissionPercentage ? Number(data.commissionPercentage) : null
+        commissionPercentage: data.commissionPercentage ? Number(data.commissionPercentage) : null,
+        apiKey: data.apiKey,
       }
 
-      const response = await axios.put<ApiResponse<Registrar>>(`/api/registrars/update-registrar/${editingRegistrar.id}`, payload)
-      
-      if (response.data.success && response.data.data) {
-        toast.success(response.data.message || "Registrar updated successfully")
-        setRegistrars(prev => prev.map(r => 
-          r.id === editingRegistrar.id ? response.data.data! : r
-        ))
+      const response = await axios.put<ApiResponse<Registrar>>(`/api/registrar/update-registrar/${editingRegistrar.id}`, payload)
+
+      if (response.data.success) {
+        toast.success("Registrar updated successfully")
+        fetchRegistrars()
         setEditingRegistrar(null)
         reset()
       }
@@ -222,9 +202,10 @@ export  function RegistrarManagement() {
       website: registrar.website,
       apiEndpoint: registrar.apiEndpoint,
       sandboxApiEndpoint: registrar.sandboxApiEndpoint || "",
+      apiKey: registrar.apiKey,
       commissionPercentage: registrar.commissionPercentage?.toString() || "",
       status: registrar.status,
-      sandboxMode: registrar.sandboxMode
+      sandboxMode: registrar.sandboxMode,
     })
   }
 
@@ -232,11 +213,11 @@ export  function RegistrarManagement() {
     if (!confirm("Are you sure you want to delete this registrar?")) return
 
     try {
-      const response = await axios.delete<ApiResponse>(`/api/registrars/delete-registrar/${id}`)
-      
+      const response = await axios.delete<ApiResponse>(`/api/registrar/delete-registrar/${id}`)
+
       if (response.data.success) {
-        toast.success(response.data.message || "Registrar deleted successfully")
-        setRegistrars(prev => prev.filter(r => r.id !== id))
+        toast.success("Registrar deleted successfully")
+        fetchRegistrars()
       }
     } catch (error) {
       const apiError = error as AxiosError<ApiResponse>
@@ -244,37 +225,12 @@ export  function RegistrarManagement() {
     }
   }
 
-  const handleTestConnection = async (id: number): Promise<void> => {
-    try {
-      setTestingConnections(prev => new Set([...prev, id]))
-      
-      const response = await axios.post<TestConnectionResponse>(`/api/registrars/test-registrar-connection/${id}/`)
-      
-      if (response.data.success) {
-        toast.success(response.data.message)
-        // Update registrar with last sync date if successful
-        fetchRegistrars()
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      const apiError = error as AxiosError<ApiResponse>
-      toast.error(apiError.response?.data?.error || "Failed to test connection")
-    } finally {
-      setTestingConnections(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(id)
-        return newSet
-      })
-    }
-  }
-
   const handleManualSync = async (id: number): Promise<void> => {
     try {
-      const response = await axios.post<ApiResponse<Registrar>>(`/api/registrars/manual-sync/${id}`)
-      
+      const response = await axios.post<ApiResponse>(`/api/registrar/${id}/sync`)
+
       if (response.data.success) {
-        toast.success(response.data.message || "Manual sync completed")
+        toast.success("Manual sync completed")
         fetchRegistrars()
       }
     } catch (error) {
@@ -283,12 +239,36 @@ export  function RegistrarManagement() {
     }
   }
 
-  const getStatusBadge = (status: Status): JSX.Element => {
-    return (
-      <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>
-        {status.toLowerCase()}
-      </Badge>
-    )
+  const getStatusBadge = (status: Status): React.JSX.Element => {
+    return <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>{status.toLowerCase()}</Badge>
+  }
+
+  const getApiStatusIcon = (registrar: Registrar): React.JSX.Element => {
+    const status = registrar.status === "ACTIVE" ? "connected" : "disconnected"
+    switch (status) {
+      case "connected":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "disconnected":
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case "error":
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+      default:
+        return <XCircle className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  const getApiStatusBadgeVariant = (registrar: Registrar): "default" | "destructive" | "secondary" | "outline" => {
+    const status = registrar.status === "ACTIVE" ? "connected" : "disconnected"
+    switch (status) {
+      case "connected":
+        return "default"
+      case "disconnected":
+        return "destructive"
+      case "error":
+        return "secondary"
+      default:
+        return "outline"
+    }
   }
 
   const formatDate = (dateString: string | null): string => {
@@ -329,17 +309,17 @@ export  function RegistrarManagement() {
                 <DialogDescription>Configure a new domain registrar integration</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmitCreate)}>
-                <RegistrarForm 
-                  register={register} 
-                  errors={errors} 
+                <RegistrarForm
+                  register={register}
+                  errors={errors}
                   setValue={setValue}
                   watchedStatus={watchedStatus}
                   watchedSandboxMode={watchedSandboxMode}
                 />
                 <DialogFooter className="mt-6">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => {
                       setIsCreateDialogOpen(false)
                       reset()
@@ -365,7 +345,7 @@ export  function RegistrarManagement() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             {registrars.map((registrar) => (
               <Card key={registrar.id} className="relative">
                 <CardHeader>
@@ -374,56 +354,50 @@ export  function RegistrarManagement() {
                       <Building className="h-5 w-5 text-primary" />
                       <CardTitle className="text-lg">{registrar.name}</CardTitle>
                     </div>
-                    {getStatusBadge(registrar.status)}
+                    <div className="flex flex-col items-end space-y-1">
+                      {getStatusBadge(registrar.status)}
+                      <Badge variant={getApiStatusBadgeVariant(registrar)} className="text-xs">
+                        {getApiStatusIcon(registrar)}
+                        <span className="ml-1">{registrar.status === "ACTIVE" ? "connected" : "disconnected"}</span>
+                      </Badge>
+                    </div>
                   </div>
                   <CardDescription className="flex items-center space-x-2">
                     <Globe className="h-3 w-3" />
                     <a href={registrar.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      {new URL(registrar.website).hostname}
+                      {registrar.website}
                     </a>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {registrar.commissionPercentage && (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="flex items-center">
                           <DollarSign className="mr-1 h-3 w-3" />
                           Commission
                         </span>
-                        <span className="font-medium">{registrar.commissionPercentage}%</span>
+                        <span className="font-medium">{registrar.commissionPercentage || 0}%</span>
                       </div>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <span>Mode</span>
-                      <Badge variant={registrar.sandboxMode ? "secondary" : "outline"} className="text-xs">
-                        {registrar.sandboxMode ? "Sandbox" : "Live"}
-                      </Badge>
+                      <div className="flex items-center justify-between">
+                        <span>Sandbox</span>
+                        <Badge variant={registrar.sandboxMode ? "secondary" : "outline"} className="text-xs">
+                          {registrar.sandboxMode ? "Yes" : "No"}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between col-span-2">
-                      <span className="flex items-center">
-                        <Calendar className="mr-1 h-3 w-3" />
-                        Last Sync
-                      </span>
-                      <span className="font-medium text-xs">{formatDate(registrar.lastSyncDate)}</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center">
+                          <Calendar className="mr-1 h-3 w-3" />
+                          Last Sync
+                        </span>
+                        <span className="font-medium text-xs">{formatDate(registrar.lastSyncDate)}</span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTestConnection(registrar.id)}
-                      disabled={testingConnections.has(registrar.id)}
-                      className="flex-1"
-                    >
-                      {testingConnections.has(registrar.id) ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Key className="mr-2 h-3 w-3" />
-                      )}
-                      Test API
-                    </Button>
                     <Button variant="outline" size="sm" onClick={() => handleEdit(registrar)}>
                       <Edit className="h-3 w-3" />
                     </Button>
@@ -451,28 +425,19 @@ export  function RegistrarManagement() {
                     <CardTitle className="flex items-center space-x-2">
                       <Building className="h-5 w-5" />
                       <span>{registrar.name}</span>
+                      {getApiStatusIcon(registrar)}
                     </CardTitle>
-                    {getStatusBadge(registrar.status)}
+                    <Badge variant={getApiStatusBadgeVariant(registrar)}>
+                      {registrar.status === "ACTIVE" ? "connected" : "disconnected"}
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">API Endpoint</Label>
                       <p className="text-sm font-mono bg-muted p-2 rounded break-all">
                         {registrar.sandboxMode ? registrar.sandboxApiEndpoint : registrar.apiEndpoint}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Mode</Label>
-                      <p className="text-sm bg-muted p-2 rounded">
-                        {registrar.sandboxMode ? "Sandbox" : "Live"}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Commission</Label>
-                      <p className="text-sm bg-muted p-2 rounded">
-                        {registrar.commissionPercentage ? `${registrar.commissionPercentage}%` : "N/A"}
                       </p>
                     </div>
                     <div className="space-y-2">
@@ -481,19 +446,6 @@ export  function RegistrarManagement() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleTestConnection(registrar.id)}
-                      disabled={testingConnections.has(registrar.id)}
-                    >
-                      {testingConnections.has(registrar.id) ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Key className="mr-2 h-3 w-3" />
-                      )}
-                      Test Connection
-                    </Button>
                     <Button variant="outline" size="sm" onClick={() => handleManualSync(registrar.id)}>
                       <RefreshCw className="mr-2 h-3 w-3" />
                       Manual Sync
@@ -511,27 +463,30 @@ export  function RegistrarManagement() {
       </Tabs>
 
       {/* Edit Registrar Dialog */}
-      <Dialog open={!!editingRegistrar} onOpenChange={() => {
-        setEditingRegistrar(null)
-        reset()
-      }}>
+      <Dialog
+        open={!!editingRegistrar}
+        onOpenChange={() => {
+          setEditingRegistrar(null)
+          reset()
+        }}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Registrar</DialogTitle>
             <DialogDescription>Update registrar configuration and API settings</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmitEdit)}>
-            <RegistrarForm 
-              register={register} 
-              errors={errors} 
+            <RegistrarForm
+              register={register}
+              errors={errors}
               setValue={setValue}
               watchedStatus={watchedStatus}
               watchedSandboxMode={watchedSandboxMode}
             />
             <DialogFooter className="mt-6">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setEditingRegistrar(null)
                   reset()
@@ -551,44 +506,32 @@ export  function RegistrarManagement() {
   )
 }
 
-function RegistrarForm({ register, errors, setValue, watchedStatus, watchedSandboxMode }: RegistrarFormProps): JSX.Element {
+function RegistrarForm({
+  register,
+  errors,
+  setValue,
+  watchedStatus,
+  watchedSandboxMode,
+}: RegistrarFormProps): React.JSX.Element {
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="name">Registrar Name *</Label>
-          <Input
-            id="name"
-            {...register("name")}
-            placeholder="Namecheap"
-          />
-          {errors.name && (
-            <p className="text-sm text-destructive">{errors.name.message}</p>
-          )}
+          <Input id="name" {...register("name")} placeholder="Namecheap" />
+          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="website">Website *</Label>
-          <Input
-            id="website"
-            {...register("website")}
-            placeholder="https://www.namecheap.com"
-          />
-          {errors.website && (
-            <p className="text-sm text-destructive">{errors.website.message}</p>
-          )}
+          <Input id="website" {...register("website")} placeholder="https://www.namecheap.com" />
+          {errors.website && <p className="text-sm text-destructive">{errors.website.message}</p>}
         </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="apiEndpoint">API Endpoint *</Label>
-        <Input
-          id="apiEndpoint"
-          {...register("apiEndpoint")}
-          placeholder="https://api.namecheap.com/xml.response"
-        />
-        {errors.apiEndpoint && (
-          <p className="text-sm text-destructive">{errors.apiEndpoint.message}</p>
-        )}
+        <Input id="apiEndpoint" {...register("apiEndpoint")} placeholder="https://api.namecheap.com/xml.response" />
+        {errors.apiEndpoint && <p className="text-sm text-destructive">{errors.apiEndpoint.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -598,9 +541,22 @@ function RegistrarForm({ register, errors, setValue, watchedStatus, watchedSandb
           {...register("sandboxApiEndpoint")}
           placeholder="https://api.sandbox.namecheap.com/xml.response"
         />
-        {errors.sandboxApiEndpoint && (
-          <p className="text-sm text-destructive">{errors.sandboxApiEndpoint.message}</p>
-        )}
+        {errors.sandboxApiEndpoint && <p className="text-sm text-destructive">{errors.sandboxApiEndpoint.message}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="apiKey">API Key *</Label>
+        <Input
+          id="apiKey"
+          type="password"
+          {...register("apiKey")}
+          placeholder="Enter your API key"
+          autoComplete="new-password"
+        />
+        {errors.apiKey && <p className="text-sm text-destructive">{errors.apiKey.message}</p>}
+        <p className="text-xs text-muted-foreground">
+          Your API key will be stored securely and used for registrar API calls
+        </p>
       </div>
 
       <div className="space-y-2">

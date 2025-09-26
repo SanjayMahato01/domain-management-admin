@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard,Users, Globe, Server, Mail, BarChart3, Settings, Menu, X, ChevronLeft, MonitorSpeaker, Database } from "lucide-react"
+import { LayoutDashboard,Users, Globe, Server, Mail, BarChart3, Settings, Menu, X, ChevronLeft, MonitorSpeaker, Database, PackageSearch } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "dashboard", icon: LayoutDashboard },
@@ -11,7 +11,7 @@ const navigation = [
   { name: "Domains", href: "domains", icon: Globe },
   { name: "Hosting", href: "hosting", icon: Server },
   { name: "VMS", href: "vms", icon: MonitorSpeaker },
-  { name: "Registrars", href: "registrars", icon: Database },
+  { name: "Hosting packages", href: "hostingPackages", icon: PackageSearch },
   { name: "Email", href: "email", icon: Mail },
   { name: "Analytics", href: "analytics", icon: BarChart3 },
   { name: "Settings", href: "settings", icon: Settings },
