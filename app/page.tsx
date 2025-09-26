@@ -12,6 +12,9 @@ import { VMSManagement } from "@/components/vms-management"
 import { useState } from "react"
 import {RegistrarManagement} from "@/components/registrars-management"
 import HostingPackages from "@/components/hosting-packages"
+import ServerManagement from "@/components/server-management"
+import TLDManagement from "@/components/tld-management"
+import Billing from "@/components/billings"
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
@@ -25,16 +28,22 @@ export default function AdminDashboard() {
         return <DomainManagement />
       case "hosting":
         return <HostingServices />
-      case "vns":
+      case "vms":
         return <VMSManagement />
+      case "tldManagement":
+        return <TLDManagement />
       case "registrars":
         return <RegistrarManagement />
+      case "serverManagement":
+        return <ServerManagement />
       case "email":
         return <EmailManagement />
       case "analytics":
         return <AnalyticsReports />
       case "hostingPackages":
         return <HostingPackages />
+      case "billings":
+        return <Billing />
       default:
         return <Dashboard />
     }

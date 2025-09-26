@@ -37,8 +37,16 @@ import {
   Calendar,
   Loader2,
   RefreshCw,
+  EyeOff,
+  Eye,
 } from "lucide-react"
 import axios from "axios"
+
+function formatDate(value: string | null): string {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  return date.toLocaleDateString();
+}
 
 export type Status = "ACTIVE" | "INACTIVE"
 
@@ -86,8 +94,8 @@ const registrarSchema = z.object({
     .refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100), {
       message: "Commission must be between 0 and 100",
     }),
-  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
-  sandboxMode: z.boolean().default(false),
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+  sandboxMode: z.boolean(),
 })
 
 export type RegistrarFormData = z.infer<typeof registrarSchema>
@@ -227,7 +235,7 @@ export function RegistrarManagement() {
 
   const handleManualSync = async (id: number): Promise<void> => {
     try {
-      const response = await axios.post<ApiResponse>(`/api/registrar/${id}/sync`)
+      const response = await axios.post<ApiResponse>(`/api/registrar/manual-sync/${id}`)
 
       if (response.data.success) {
         toast.success("Manual sync completed")
@@ -250,8 +258,6 @@ export function RegistrarManagement() {
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case "disconnected":
         return <XCircle className="h-4 w-4 text-red-500" />
-      case "error":
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
       default:
         return <XCircle className="h-4 w-4 text-gray-500" />
     }
@@ -264,16 +270,9 @@ export function RegistrarManagement() {
         return "default"
       case "disconnected":
         return "destructive"
-      case "error":
-        return "secondary"
       default:
         return "outline"
     }
-  }
-
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return "Never"
-    return new Date(dateString).toLocaleDateString()
   }
 
   if (loading) {
@@ -513,6 +512,9 @@ function RegistrarForm({
   watchedStatus,
   watchedSandboxMode,
 }: RegistrarFormProps): React.JSX.Element {
+
+  const [showApiKey, setShowApiKey] = useState(false)
+
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-2 gap-4">
@@ -544,15 +546,25 @@ function RegistrarForm({
         {errors.sandboxApiEndpoint && <p className="text-sm text-destructive">{errors.sandboxApiEndpoint.message}</p>}
       </div>
 
-      <div className="space-y-2">
+       <div className="space-y-2 relative">
         <Label htmlFor="apiKey">API Key *</Label>
-        <Input
-          id="apiKey"
-          type="password"
-          {...register("apiKey")}
-          placeholder="Enter your API key"
-          autoComplete="new-password"
-        />
+        <div className="relative">
+          <Input
+            id="apiKey"
+            type={showApiKey ? "text" : "password"}
+            {...register("apiKey")}
+            placeholder="Enter your API key"
+            autoComplete="new-password"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowApiKey(prev => !prev)}
+            className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+          >
+            {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
         {errors.apiKey && <p className="text-sm text-destructive">{errors.apiKey.message}</p>}
         <p className="text-xs text-muted-foreground">
           Your API key will be stored securely and used for registrar API calls

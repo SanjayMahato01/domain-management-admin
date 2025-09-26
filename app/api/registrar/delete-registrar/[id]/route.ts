@@ -9,6 +9,7 @@ interface RouteParams {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const {id} = await params
   try {
     const adminCheck = await verifyAdmin(request);
     if ('error' in adminCheck) {
@@ -18,7 +19,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { id } = params;
+  
     
     const registrar = await prisma.registrar.findUnique({
       where: { id: parseInt(id) }

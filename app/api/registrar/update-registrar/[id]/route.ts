@@ -10,13 +10,14 @@ interface RouteParams {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+   const {id} = await params
   try {
     const adminCheck = await verifyAdmin(request)
     if ("error" in adminCheck) {
       return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status })
     }
 
-    const { id } = params
+
     const body = await request.json()
 
     const registrar = await prisma.registrar.findUnique({

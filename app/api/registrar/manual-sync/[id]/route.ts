@@ -12,6 +12,7 @@ interface RouteParams {
 
 // POST - Manual sync with registrar
 export async function POST(request: NextRequest, { params }: RouteParams) {
+     const {id} = await params
   try {
     const adminCheck = await verifyAdmin(request);
     if ('error' in adminCheck) {
@@ -20,8 +21,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { status: adminCheck.status }
       );
     }
-
-    const { id } = params;
     
     const registrar = await prisma.registrar.findUnique({
       where: { id: parseInt(id) }
