@@ -3,10 +3,12 @@ import type { Metadata } from "next"
 
 import { LoadingBar } from "@/components/loading-bar"
 import { Suspense } from "react"
+
 import "./globals.css"
+import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
-  title: "v0 App",
+  title: "Admin",
   description: "Created with v0",
   generator: "v0.app",
 }
@@ -22,6 +24,7 @@ export default function RootLayout({
         <Suspense fallback={<div>Loading...</div>}>
           <LoadingBar />
           {children}
+          <Toaster />
         </Suspense>
       </body>
     </html>

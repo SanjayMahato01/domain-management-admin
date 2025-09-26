@@ -4,9 +4,8 @@ model Admin {
   username String @unique @db.VarChar(255)
   password String @db.VarChar(255)
 
-  @@map("admin") 
+  @@map("admin")
 }
-
 
 model User {
   id                       String             @id @default(cuid())
@@ -14,6 +13,7 @@ model User {
   email                    String             @unique
   password                 String?
   verified                 Boolean            @default(false)
+  phone                    String?
   otp                      String?
   otpExpiry                DateTime?
   emailVerified            DateTime?
@@ -26,7 +26,8 @@ model User {
   accounts                 Account[]
   billings                 Billing[]
   domainPurchased          DomainPurchased[]
-  status                   UserStatus? @map("ACTIVE")
+  status                   UserStatus?        @map("ACTIVE")
+
   @@map("users")
 }
 
@@ -57,6 +58,7 @@ model Cart {
 
 model DomainPurchased {
   id                String             @id @default(cuid())
+  registrarId       Int
   userId            String
   firstName         String
   lastName          String
@@ -75,6 +77,7 @@ model DomainPurchased {
   providerName      DomainProviderName @default(DREAMSCAPE)
   billing           Billing?
   user              User               @relation(fields: [userId], references: [id])
+  registrar         Registrar          @relation(fields: [registrarId], references: [id])
 
   @@index([userId])
   @@index([razorpayOrderId])
@@ -93,7 +96,7 @@ model HostingPurchased {
   status       HostingStatus @default(ACTIVE)
   createdAt    DateTime      @default(now())
   user         User          @relation(fields: [userId], references: [id])
-  
+
   @@map("hosting_purchased")
 }
 
@@ -129,7 +132,7 @@ enum UserStatus {
   SUSPEND
   INACTIVE
 }
- 
+
 enum HostingStatus {
   ACTIVE
   SUSPEND

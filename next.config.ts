@@ -6,11 +6,7 @@ const nextConfig: NextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  },
-  webpack(config) {
-    config.ignoreWarnings = [/./]; // Ignores all Webpack warnings
-    return config;
-  },
+  }
 };
 
 export default nextConfig;

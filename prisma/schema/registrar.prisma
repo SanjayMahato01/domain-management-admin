@@ -1,0 +1,22 @@
+model Registrar {
+    id                   Int       @id @default(autoincrement())
+    name                 String
+    website              String
+    apiEndpoint          String
+    sandboxApiEndpoint   String
+    commissionPercentage Float?
+    status               Status    @default(ACTIVE)
+    sandboxMode          Boolean   @default(false)
+    lastSyncDate         DateTime?
+    createdAt            DateTime  @default(now())
+    updatedAt            DateTime  @updatedAt
+
+    domains DomainPurchased[]
+
+    @@map("registrars")
+}
+
+enum Status {
+    ACTIVE
+    INACTIVE
+}

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || 'all'
 
-    // Build where clause - handle null status
+  
     const where: any = {
       verified: true
     }
@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         fullName: true,
         email: true,
         status: true,
+        phone : true,
         createdAt: true,
         _count: {
           select: {
@@ -61,10 +62,9 @@ export async function GET(request: NextRequest) {
       id: user.id,
       name: user.fullName,
       email: user.email,
-      phone: '',
+      phone:  user.phone || '',
       // Handle null status by providing a default
-      status: user.status || 'active', // This will handle null values
-      plan: 'Basic',
+      status: user.status?.toLowerCase(),
       domains: user._count.domainPurchased,
       totalVMs: user._count.hostingsPurchased,
       totalHosting: user._count.hostingsPurchased,

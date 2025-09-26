@@ -10,6 +10,7 @@ import { EmailManagement } from "@/components/email-management"
 import { AnalyticsReports } from "@/components/analytics"
 import { VMSManagement } from "@/components/vms-management"
 import { useState } from "react"
+import {RegistrarManagement} from "@/components/registrars-management"
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
@@ -25,6 +26,8 @@ export default function AdminDashboard() {
         return <HostingServices />
       case "vns":
         return <VMSManagement />
+      case "registrars":
+        return <RegistrarManagement />
       case "email":
         return <EmailManagement />
       case "analytics":

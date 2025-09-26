@@ -31,15 +31,14 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({ message: "Login successful" });
 
-    // Set secure, HTTP-only cookie
     response.cookies.set({
       name: "token",
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // only HTTPS in prod
+      secure: process.env.NODE_ENV === "production", 
       path: "/",
       sameSite: "strict",
-      maxAge: 60 * 60, // 1 hour
+      maxAge: 60 * 60, 
     });
 
     return response;

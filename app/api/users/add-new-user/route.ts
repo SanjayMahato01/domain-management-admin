@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/admin-auth'
 import prisma from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 // Add new user
 export async function POST(request: NextRequest) {
   try {
-
     const adminCheck = await verifyAdmin(request)
     if ('error' in adminCheck) {
       return NextResponse.json(
@@ -14,7 +14,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, email, phone, plan } = await request.json()
+    const { name, email, phone, password } = await request.json()
+
+    // Validate required fields
+    if (!name || !email || !password) {
+      return NextResponse.json(
+        { error: 'Name, email, and password are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters long' },
+        { status: 400 }
+      )
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email }
@@ -27,11 +43,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Hash the password
+    const saltRounds = 10
+    const hashedPassword = await bcrypt.hash(password, saltRounds)
+
     // Create new user
     const newUser = await prisma.user.create({
       data: {
         fullName: name,
         email,
+        password: hashedPassword,
+        phone: phone || null,
         verified: true,
         status: 'ACTIVE',
       },
@@ -39,6 +61,7 @@ export async function POST(request: NextRequest) {
         id: true,
         fullName: true,
         email: true,
+        phone: true,
         status: true,
         createdAt: true,
         _count: {
@@ -50,14 +73,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Transform the response
     const transformedUser = {
       id: newUser.id,
       name: newUser.fullName,
       email: newUser.email,
-      phone: phone || '',
-      status: newUser.status || 'active',
-      plan: plan || 'Basic',
+      phone: newUser.phone || '',
+      status: newUser.status?.toLowerCase(),
       domains: newUser._count.domainPurchased,
       totalVMs: newUser._count.hostingsPurchased,
       totalHosting: newUser._count.hostingsPurchased,

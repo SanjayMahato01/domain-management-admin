@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Shield, ShieldCheck, Mail, Calendar } from "lucide-react"
+import { Plus, Shield, ShieldCheck, Mail, Calendar, Eye, EyeOff } from "lucide-react"
 import { UserDirectory } from "./users/users-directory"
 import axios from "axios"
 
@@ -25,7 +25,6 @@ interface User {
   email: string
   phone: string
   status: string
-  plan: string
   domains: number
   totalVMs: number
   totalHosting: number
@@ -57,13 +56,11 @@ export function UserManagement() {
     }
   }
 
-  const handleAddUser = async (userData: { name: string; email: string; phone: string; plan: string }) => {
+  const handleAddUser = async (userData: { name: string; email: string; phone: string; password: string }) => {
     try {
-      const response = await axios.post('/api/admin/users', userData)
-      // Add new user to the state immediately
+      const response = await axios.post('/api/users/add-new-user', userData)
       setUsers(prevUsers => [response.data, ...prevUsers])
       setIsAddUserOpen(false)
-      // Optional: Show success message
     } catch (err: any) {
       console.error('Error adding user:', err)
       alert(err.response?.data?.error || 'Failed to add user')
@@ -174,7 +171,7 @@ export function UserManagement() {
 
 // Add User Form Component
 interface AddUserFormProps {
-  onSubmit: (userData: { name: string; email: string; phone: string; plan: string }) => void
+  onSubmit: (userData: { name: string; email: string; phone: string; password: string }) => void
   onCancel: () => void
 }
 
@@ -183,12 +180,29 @@ function AddUserForm({ onSubmit, onCancel }: AddUserFormProps) {
     name: '',
     email: '',
     phone: '',
-    plan: 'Basic'
+    password: ''
   })
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Basic validation
+    if (formData.password.length < 6) {
+      alert("Password must be at least 6 characters long")
+      return
+    }
+    
     onSubmit(formData)
+  }
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+    let password = ''
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setFormData({...formData, password})
   }
 
   return (
@@ -234,21 +248,39 @@ function AddUserForm({ onSubmit, onCancel }: AddUserFormProps) {
           />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="plan" className="text-right">
-            Plan
+          <Label htmlFor="password" className="text-right">
+            Password
           </Label>
-          <Select value={formData.plan} onValueChange={(value) => setFormData({...formData, plan: value})}>
-            <SelectTrigger className="col-span-3">
-              <SelectValue placeholder="Select a plan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Basic">Basic</SelectItem>
-              <SelectItem value="Starter">Starter</SelectItem>
-              <SelectItem value="Premium">Premium</SelectItem>
-              <SelectItem value="Business">Business</SelectItem>
-              <SelectItem value="Enterprise">Enterprise</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="col-span-3 relative">
+            <Input 
+              id="password" 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Enter password" 
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              required
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <div className="col-start-2 col-span-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={generateRandomPassword}
+              className="text-xs"
+            >
+              Generate Strong Password
+            </Button>
+          </div>
         </div>
       </div>
       <DialogFooter>

@@ -12,9 +12,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import { Search, MoreHorizontal, Edit, Trash2, Mail, Shield, Phone } from "lucide-react"
 
 interface User {
@@ -23,7 +23,6 @@ interface User {
   email: string
   phone: string
   status: string
-  plan: string
   domains: number
   totalVMs: number
   totalHosting: number
@@ -58,17 +57,6 @@ export function UserDirectory({ users, onUsersUpdate }: UserDirectoryProps) {
       default:
         return <Badge variant="outline">{status}</Badge>
     }
-  }
-
-  const getPlanBadge = (plan: string) => {
-    const colors = {
-      Basic: "bg-gray-500",
-      Starter: "bg-blue-500",
-      Premium: "bg-purple-500",
-      Business: "bg-orange-500",
-      Enterprise: "bg-green-600",
-    }
-    return <Badge className={colors[plan as keyof typeof colors] || "bg-gray-500"}>{plan}</Badge>
   }
 
   return (
@@ -109,7 +97,6 @@ export function UserDirectory({ users, onUsersUpdate }: UserDirectoryProps) {
                 <TableHead>User</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Plan</TableHead>
                 <TableHead>Domains</TableHead>
                 <TableHead>Total VMs</TableHead>
                 <TableHead>Total Hosting</TableHead>
@@ -137,7 +124,6 @@ export function UserDirectory({ users, onUsersUpdate }: UserDirectoryProps) {
                     )}
                   </TableCell>
                   <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell>{getPlanBadge(user.plan)}</TableCell>
                   <TableCell>{user.domains}</TableCell>
                   <TableCell>{user.totalVMs}</TableCell>
                   <TableCell>{user.totalHosting}</TableCell>
