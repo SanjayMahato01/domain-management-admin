@@ -1,0 +1,20 @@
+model Tld {
+  id                String     @id @default(cuid())
+  tldExtension      String     @unique
+  registrarId       Int
+  registrar         Registrar  @relation(fields: [registrarId], references: [id])
+  category          String
+  billingCycle      String
+  registrationPrice String     
+  renewalPrice      String     
+  transferPrice     String
+  redemptionPrice   String
+  minimumYears      Int
+  maximumYears      Int
+  status            Boolean
+  autoRenewal       Boolean
+  whoisPrivacy      Boolean
+  dnssecPrivacy     Boolean
+
+  @@map("tlds")
+}

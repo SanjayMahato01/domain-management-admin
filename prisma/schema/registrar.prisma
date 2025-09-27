@@ -13,6 +13,7 @@ model Registrar {
     updatedAt            DateTime  @updatedAt
 
     domains DomainPurchased[]
+    tlds    Tld[]
 
     @@map("registrars")
 }

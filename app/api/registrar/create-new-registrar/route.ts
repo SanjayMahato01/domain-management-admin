@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import { verifyAdmin } from '@/lib/admin-auth';
 import prisma from '@/lib/prisma';
 

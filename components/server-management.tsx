@@ -1,10 +1,9 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -15,9 +14,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import {
   Plus,
   Edit,
@@ -32,232 +40,300 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  Loader2,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from "lucide-react"
+import * as z from "zod"
+import { toast } from "sonner"
 
-// Mock data for servers
-const mockServers = [
-  {
-    id: "server-01",
-    name: "Web Server 01",
-    hostname: "web01.hostpanel.com",
-    ipAddress: "192.168.1.10",
-    location: "US East (Virginia)",
-    provider: "AWS",
-    status: "online",
-    uptime: "99.9%",
-    cpu: {
-      cores: 4,
-      usage: 45,
-      model: "Intel Xeon E5-2686 v4",
-    },
-    memory: {
-      total: 16,
-      used: 8.2,
-      usage: 51,
-    },
-    storage: {
-      total: 500,
-      used: 180,
-      usage: 36,
-      type: "SSD",
-    },
-    network: {
-      bandwidth: "1 Gbps",
-      usage: 23,
-    },
-    os: "Ubuntu 22.04 LTS",
-    controlPanel: "cPanel",
-    activeAccounts: 45,
-    maxAccounts: 100,
-    lastUpdate: "2024-01-15T10:30:00Z",
-  },
-  {
-    id: "server-02",
-    name: "Web Server 02",
-    hostname: "web02.hostpanel.com",
-    ipAddress: "192.168.1.11",
-    location: "US West (Oregon)",
-    provider: "DigitalOcean",
-    status: "online",
-    uptime: "99.8%",
-    cpu: {
-      cores: 8,
-      usage: 32,
-      model: "Intel Xeon Gold 6140",
-    },
-    memory: {
-      total: 32,
-      used: 12.8,
-      usage: 40,
-    },
-    storage: {
-      total: 1000,
-      used: 420,
-      usage: 42,
-      type: "NVMe SSD",
-    },
-    network: {
-      bandwidth: "1 Gbps",
-      usage: 18,
-    },
-    os: "CentOS 8",
-    controlPanel: "Plesk",
-    activeAccounts: 78,
-    maxAccounts: 150,
-    lastUpdate: "2024-01-15T10:25:00Z",
-  },
-  {
-    id: "server-03",
-    name: "Enterprise Server 01",
-    hostname: "ent01.hostpanel.com",
-    ipAddress: "192.168.1.12",
-    location: "EU Central (Frankfurt)",
-    provider: "Hetzner",
-    status: "maintenance",
-    uptime: "99.7%",
-    cpu: {
-      cores: 16,
-      usage: 0,
-      model: "AMD EPYC 7543",
-    },
-    memory: {
-      total: 64,
-      used: 0,
-      usage: 0,
-    },
-    storage: {
-      total: 2000,
-      used: 850,
-      usage: 43,
-      type: "NVMe SSD",
-    },
-    network: {
-      bandwidth: "10 Gbps",
-      usage: 0,
-    },
-    os: "Ubuntu 22.04 LTS",
-    controlPanel: "DirectAdmin",
-    activeAccounts: 0,
-    maxAccounts: 200,
-    lastUpdate: "2024-01-15T08:00:00Z",
-  },
-]
+// Validation Schema
+const serverSchema = z.object({
+  serverName: z.string()
+    .min(1, "Server name is required")
+    .min(3, "Server name must be at least 3 characters")
+    .max(50, "Server name must be less than 50 characters"),
 
-const serverProviders = [
-  { value: "aws", label: "Amazon Web Services" },
-  { value: "digitalocean", label: "DigitalOcean" },
-  { value: "linode", label: "Linode" },
-  { value: "vultr", label: "Vultr" },
-  { value: "hetzner", label: "Hetzner" },
-  { value: "ovh", label: "OVH" },
-]
+  hostName: z.string()
+    .min(1, "Hostname is required")
+    .regex(/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+      "Invalid hostname format"),
 
-const operatingSystems = [
-  { value: "ubuntu-22.04", label: "Ubuntu 22.04 LTS" },
-  { value: "ubuntu-20.04", label: "Ubuntu 20.04 LTS" },
-  { value: "centos-8", label: "CentOS 8" },
-  { value: "debian-11", label: "Debian 11" },
-  { value: "rocky-8", label: "Rocky Linux 8" },
-]
+  ipAddress: z.string()
+  .min(1, "IP address is required")
+  .regex(
+    /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/,
+    "Invalid IP address format"
+  ),
+
+  apiKey: z.string()
+    .min(1, "API key is required")
+    .min(10, "API key must be at least 10 characters")
+    .max(255, "API key is too long"),
+
+  location: z.string()
+    .min(1, "Location is required")
+    .max(100, "Location must be less than 100 characters"),
+
+  controlPanel: z.enum(['CPANEL', 'PLESK', 'DIRECTADMIN', 'CYBERPANEL'], {
+    required_error: "Please select a control panel"
+  }),
+
+  maxAmount: z.string()
+    .optional()
+    .refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
+      "Max amount must be a positive number"),
+
+  status: z.enum(['ONLINE', 'OFFLINE', 'MAINTENANCE']).default('ONLINE')
+})
+
+type ServerFormData = z.infer<typeof serverSchema>
 
 const controlPanels = [
-  { value: "cpanel", label: "cPanel/WHM" },
-  { value: "plesk", label: "Plesk" },
-  { value: "directadmin", label: "DirectAdmin" },
-  { value: "cyberpanel", label: "CyberPanel" },
-  { value: "none", label: "None" },
+  { value: "CPANEL", label: "cPanel/WHM" },
+  { value: "PLESK", label: "Plesk" },
+  { value: "DIRECTADMIN", label: "DirectAdmin" },
+  { value: "CYBERPANEL", label: "CyberPanel" },
 ]
 
-export default function ServerManagement() {
-  const [servers, setServers] = useState(mockServers)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingServer, setEditingServer] = useState<any>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    hostname: "",
-    ipAddress: "",
-    location: "",
-    provider: "",
-    os: "",
-    controlPanel: "",
-    maxAccounts: "",
-    status: "online",
+const statusOptions = [
+  { value: "ONLINE", label: "Online" },
+  { value: "MAINTENANCE", label: "Maintenance" },
+  { value: "OFFLINE", label: "Offline" },
+]
+
+// Server Form Component
+function ServerForm({
+  isEdit = false,
+  defaultValues,
+  onSubmit,
+  isLoading
+}: {
+  isEdit?: boolean
+  defaultValues?: Partial<ServerFormData>
+  onSubmit: (data: ServerFormData) => void
+  isLoading: boolean
+}) {
+  const [showApiKey, setShowApiKey] = useState(false)
+
+  const form = useForm<ServerFormData>({
+    resolver: zodResolver(serverSchema),
+    defaultValues: {
+      serverName: "",
+      hostName: "",
+      ipAddress: "",
+      apiKey: "",
+      location: "",
+      controlPanel: "CPANEL",
+      maxAmount: "",
+      status: "ONLINE",
+      ...defaultValues
+    }
   })
 
-  const handleCreateServer = () => {
-    const newServer = {
-      id: `server-${servers.length + 1}`.padStart(2, "0"),
-      ...formData,
-      maxAccounts: Number.parseInt(formData.maxAccounts),
-      uptime: "100%",
-      cpu: { cores: 4, usage: 0, model: "Intel Xeon" },
-      memory: { total: 16, used: 0, usage: 0 },
-      storage: { total: 500, used: 0, usage: 0, type: "SSD" },
-      network: { bandwidth: "1 Gbps", usage: 0 },
-      activeAccounts: 0,
-      lastUpdate: new Date().toISOString(),
+  useEffect(() => {
+    if (defaultValues) {
+      form.reset(defaultValues)
     }
-    setServers([...servers, newServer])
-    setIsCreateDialogOpen(false)
-    resetForm()
-  }
+  }, [defaultValues, form])
 
-  const handleEditServer = (server: any) => {
-    setEditingServer(server)
-    setFormData({
-      name: server.name,
-      hostname: server.hostname,
-      ipAddress: server.ipAddress,
-      location: server.location,
-      provider: server.provider,
-      os: server.os,
-      controlPanel: server.controlPanel,
-      maxAccounts: server.maxAccounts.toString(),
-      status: server.status,
-    })
-  }
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="serverName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Server Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Web Server 01" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-  const handleUpdateServer = () => {
-    const updatedServers = servers.map((server) =>
-      server.id === editingServer.id
-        ? {
-            ...server,
-            ...formData,
-            maxAccounts: Number.parseInt(formData.maxAccounts),
-            lastUpdate: new Date().toISOString(),
-          }
-        : server,
-    )
-    setServers(updatedServers)
-    setEditingServer(null)
-    resetForm()
-  }
+          <FormField
+            control={form.control}
+            name="hostName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Hostname</FormLabel>
+                <FormControl>
+                  <Input placeholder="web01.hostpanel.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-  const handleDeleteServer = (id: string) => {
-    setServers(servers.filter((server) => server.id !== id))
-  }
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="ipAddress"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>IP Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="192.168.1.10" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      hostname: "",
-      ipAddress: "",
-      location: "",
-      provider: "",
-      os: "",
-      controlPanel: "",
-      maxAccounts: "",
-      status: "online",
-    })
-  }
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Location</FormLabel>
+                <FormControl>
+                  <Input placeholder="US East (Virginia)" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
+        <FormField
+          control={form.control}
+          name="apiKey"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>API Key</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    type={showApiKey ? "text" : "password"}
+                    placeholder="Enter API key for server monitoring"
+                    {...field}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                  >
+                    {showApiKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="controlPanel"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Control Panel</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select control panel" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {controlPanels.map((panel) => (
+                      <SelectItem key={panel.value} value={panel.value}>
+                        {panel.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="maxAmount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Max Accounts</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="100" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {statusOptions.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? 'Update Server' : 'Add Server'}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}
+
+// Server Overview Component
+function ServerOverview({
+  servers,
+  onEditServer,
+  onDeleteServer,
+  onRefreshPerformance,
+  performanceData,
+  isLoadingPerformance
+}: {
+  servers: any[]
+  onEditServer: (server: any) => void
+  onDeleteServer: (id: string) => void
+  onRefreshPerformance: (serverId: string) => void
+  performanceData: Record<string, any>
+  isLoadingPerformance: Record<string, boolean>
+}) {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "online":
+      case "ONLINE":
         return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "maintenance":
+      case "MAINTENANCE":
         return <Clock className="h-4 w-4 text-yellow-500" />
-      case "offline":
+      case "OFFLINE":
         return <AlertTriangle className="h-4 w-4 text-red-500" />
       default:
         return <Server className="h-4 w-4" />
@@ -266,15 +342,418 @@ export default function ServerManagement() {
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case "online":
+      case "ONLINE":
         return "default"
-      case "maintenance":
+      case "MAINTENANCE":
         return "secondary"
-      case "offline":
+      case "OFFLINE":
         return "destructive"
       default:
         return "outline"
     }
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {servers.map((server) => {
+        const performance = performanceData[server.id]
+        const maxAccounts = server.maxAmount ? parseInt(server.maxAmount) : 100
+        const activeAccounts = performance?.activeAccounts || 0
+
+        return (
+          <Card key={server.id} className="relative">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-2">
+                  {getStatusIcon(server.status)}
+                  <CardTitle className="text-lg">{server.serverName}</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onRefreshPerformance(server.id)}
+                    disabled={isLoadingPerformance[server.id]}
+                  >
+                    {isLoadingPerformance[server.id] ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                  </Button>
+                  <Badge variant={getStatusBadgeVariant(server.status)}>{server.status}</Badge>
+                </div>
+              </div>
+              <CardDescription className="flex items-center space-x-2">
+                <MapPin className="h-3 w-3" />
+                <span>{server.location}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span>Hostname</span>
+                  <span className="font-mono text-xs">{server.hostName}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>IP Address</span>
+                  <span className="font-mono text-xs">{server.ipAddress}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Control Panel</span>
+                  <span className="font-medium">{server.controlPanel}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-border">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Accounts</span>
+                    <span className="font-medium">
+                      {activeAccounts}/{maxAccounts}
+                    </span>
+                  </div>
+                  <Progress value={(activeAccounts / maxAccounts) * 100} className="h-2" />
+                </div>
+              </div>
+
+              {performance && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center">
+                      <Activity className="mr-1 h-3 w-3" />
+                      Uptime
+                    </span>
+                    <span className="font-medium text-green-600">{performance.uptime}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => onEditServer(server)} className="flex-1">
+                  <Edit className="mr-2 h-3 w-3" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDeleteServer(server.id)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
+  )
+}
+
+// Server Performance Component
+function ServerPerformance({
+  servers,
+  performanceData,
+  onRefreshPerformance,
+  isLoadingPerformance
+}: {
+  servers: any[]
+  performanceData: Record<string, any>
+  onRefreshPerformance: (serverId: string) => void
+  isLoadingPerformance: Record<string, boolean>
+}) {
+  return (
+    <div className="grid gap-4">
+      {servers
+        .filter((server) => server.status === "ONLINE")
+        .map((server) => {
+          const performance = performanceData[server.id]
+
+          if (!performance && !isLoadingPerformance[server.id]) {
+            return (
+              <Card key={server.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center space-x-2">
+                      <Server className="h-5 w-5" />
+                      <span>{server.serverName}</span>
+                    </CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onRefreshPerformance(server.id)}
+                    >
+                      <RefreshCw className="mr-2 h-3 w-3" />
+                      Load Performance
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    No performance data available. Click "Load Performance" to fetch data.
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          }
+
+          if (isLoadingPerformance[server.id]) {
+            return (
+              <Card key={server.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Server className="h-5 w-5" />
+                    <span>{server.serverName}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                    <p className="mt-2 text-muted-foreground">Loading performance data...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          }
+
+          return (
+            <Card key={server.id}>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Server className="h-5 w-5" />
+                    <span>{server.serverName}</span>
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{server.location}</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRefreshPerformance(server.id)}
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center">
+                        <Cpu className="mr-2 h-4 w-4" />
+                        CPU Usage
+                      </span>
+                      <span className="font-medium">{performance.cpu.usage}%</span>
+                    </div>
+                    <Progress value={performance.cpu.usage} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {performance.cpu.cores} cores - {performance.cpu.model}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center">
+                        <MemoryStick className="mr-2 h-4 w-4" />
+                        Memory
+                      </span>
+                      <span className="font-medium">{performance.memory.usage}%</span>
+                    </div>
+                    <Progress value={performance.memory.usage} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {performance.memory.used.toFixed(1)}GB / {performance.memory.total}GB
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center">
+                        <HardDrive className="mr-2 h-4 w-4" />
+                        Storage
+                      </span>
+                      <span className="font-medium">{performance.storage.usage}%</span>
+                    </div>
+                    <Progress value={performance.storage.usage} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {performance.storage.used.toFixed(0)}GB / {performance.storage.total}GB {performance.storage.type}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center">
+                        <Network className="mr-2 h-4 w-4" />
+                        Network
+                      </span>
+                      <span className="font-medium">{performance.network.usage}%</span>
+                    </div>
+                    <Progress value={performance.network.usage} className="h-2" />
+                    <p className="text-xs text-muted-foreground">{performance.network.bandwidth}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+                  Last updated: {new Date(performance.lastUpdate).toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+    </div>
+  )
+}
+
+// Main Component
+export default function ServerManagement() {
+  const [servers, setServers] = useState([])
+  const [performanceData, setPerformanceData] = useState({})
+  const [isLoadingPerformance, setIsLoadingPerformance] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingServer, setEditingServer] = useState(null)
+
+  // Fetch servers on mount
+  useEffect(() => {
+    fetchServers()
+  }, [])
+
+  const fetchServers = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/servers/get-all-servers')
+      const data = await response.json()
+
+      if (data.success) {
+        setServers(data.data)
+      } else {
+        toast.error(data.error || "Failed to fetch servers")
+      }
+    } catch (error) {
+      toast.error("Failed to fetch servers")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchServerPerformance = async (serverId: string) => {
+    try {
+      setIsLoadingPerformance(prev => ({ ...prev, [serverId]: true }))
+
+      const response = await fetch(`/api/servers/performance/${serverId}`)
+      const data = await response.json()
+
+      if (data.success) {
+        setPerformanceData(prev => ({ ...prev, [serverId]: data.data.performance }))
+      } else {
+        toast.error(data.error || "Failed to fetch performance data")
+      }
+    } catch (error) {
+      toast.error("Failed to fetch performance data")
+    } finally {
+      setIsLoadingPerformance(prev => ({ ...prev, [serverId]: false }))
+    }
+  }
+
+  const handleCreateServer = async (data: ServerFormData) => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/servers/add-server', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setServers(prev => [result.data, ...prev])
+        setIsCreateDialogOpen(false)
+        toast("Server created successfully")
+      } else {
+        toast.error( result.error || "Failed to create server")
+      }
+    } catch (error) {
+      toast.error("Failed to create server")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEditServer = (server: any) => {
+    setEditingServer(server)
+  }
+
+  const handleUpdateServer = async (data: ServerFormData) => {
+    if (!editingServer) return
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(`/api/servers/update-server/${editingServer.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setServers(prev => prev.map(s => s.id === editingServer.id ? result.data : s))
+        setEditingServer(null)
+        toast("Server updated successfully")
+      } else {
+        toast.error(
+          result.error || "Failed to update server",
+        )
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update server",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteServer = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this server?')) return
+
+    try {
+      const response = await fetch(`/api/servers/delete-server/${id}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setServers(prev => prev.filter(s => s.id !== id))
+        setPerformanceData(prev => {
+          const newData = { ...prev }
+          delete newData[id]
+          return newData
+        })
+        toast.success( "Server deleted successfully")
+      } else {
+        toast.error( result.error || "Failed to delete server",
+        )
+      }
+    } catch (error) {
+      toast.error( "Failed to delete server")
+    }
+  }
+
+  if (isLoading && servers.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="mt-2 text-muted-foreground">Loading servers...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -284,191 +763,79 @@ export default function ServerManagement() {
           <h1 className="text-3xl font-bold text-foreground">Server Management</h1>
           <p className="text-muted-foreground">Monitor and manage your hosting infrastructure</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={fetchServers}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Server
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Add New Server</DialogTitle>
+                <DialogDescription>Configure a new server for your hosting infrastructure</DialogDescription>
+              </DialogHeader>
+              <ServerForm
+                onSubmit={handleCreateServer}
+                isLoading={isLoading}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {servers.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Server className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">No servers found</h3>
+            <p className="text-muted-foreground">Get started by adding your first server</p>
+            <Button
+              className="mt-4"
+              onClick={() => setIsCreateDialogOpen(true)}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Server
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Server</DialogTitle>
-              <DialogDescription>Configure a new server for your hosting infrastructure</DialogDescription>
-            </DialogHeader>
-            <ServerForm formData={formData} setFormData={setFormData} />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateServer}>Add Server</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-        </TabsList>
+          <TabsContent value="overview" className="space-y-4">
+            <ServerOverview
+              servers={servers}
+              onEditServer={handleEditServer}
+              onDeleteServer={handleDeleteServer}
+              onRefreshPerformance={fetchServerPerformance}
+              performanceData={performanceData}
+              isLoadingPerformance={isLoadingPerformance}
+            />
+          </TabsContent>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {servers.map((server) => (
-              <Card key={server.id} className="relative">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(server.status)}
-                      <CardTitle className="text-lg">{server.name}</CardTitle>
-                    </div>
-                    <Badge variant={getStatusBadgeVariant(server.status)}>{server.status}</Badge>
-                  </div>
-                  <CardDescription className="flex items-center space-x-2">
-                    <MapPin className="h-3 w-3" />
-                    <span>{server.location}</span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Hostname</span>
-                      <span className="font-mono text-xs">{server.hostname}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>IP Address</span>
-                      <span className="font-mono text-xs">{server.ipAddress}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Provider</span>
-                      <span className="font-medium">{server.provider}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Control Panel</span>
-                      <span className="font-medium">{server.controlPanel}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-border">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Accounts</span>
-                        <span className="font-medium">
-                          {server.activeAccounts}/{server.maxAccounts}
-                        </span>
-                      </div>
-                      <Progress value={(server.activeAccounts / server.maxAccounts) * 100} className="h-2" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center">
-                        <Activity className="mr-1 h-3 w-3" />
-                        Uptime
-                      </span>
-                      <span className="font-medium text-green-600">{server.uptime}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEditServer(server)} className="flex-1">
-                      <Edit className="mr-2 h-3 w-3" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteServer(server.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-4">
-          <div className="grid gap-4">
-            {servers
-              .filter((server) => server.status === "online")
-              .map((server) => (
-                <Card key={server.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="flex items-center space-x-2">
-                        <Server className="h-5 w-5" />
-                        <span>{server.name}</span>
-                      </CardTitle>
-                      <Badge variant="outline">{server.location}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center">
-                            <Cpu className="mr-2 h-4 w-4" />
-                            CPU Usage
-                          </span>
-                          <span className="font-medium">{server.cpu.usage}%</span>
-                        </div>
-                        <Progress value={server.cpu.usage} className="h-2" />
-                        <p className="text-xs text-muted-foreground">
-                          {server.cpu.cores} cores - {server.cpu.model}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center">
-                            <MemoryStick className="mr-2 h-4 w-4" />
-                            Memory
-                          </span>
-                          <span className="font-medium">{server.memory.usage}%</span>
-                        </div>
-                        <Progress value={server.memory.usage} className="h-2" />
-                        <p className="text-xs text-muted-foreground">
-                          {server.memory.used}GB / {server.memory.total}GB
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center">
-                            <HardDrive className="mr-2 h-4 w-4" />
-                            Storage
-                          </span>
-                          <span className="font-medium">{server.storage.usage}%</span>
-                        </div>
-                        <Progress value={server.storage.usage} className="h-2" />
-                        <p className="text-xs text-muted-foreground">
-                          {server.storage.used}GB / {server.storage.total}GB {server.storage.type}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center">
-                            <Network className="mr-2 h-4 w-4" />
-                            Network
-                          </span>
-                          <span className="font-medium">{server.network.usage}%</span>
-                        </div>
-                        <Progress value={server.network.usage} className="h-2" />
-                        <p className="text-xs text-muted-foreground">{server.network.bandwidth}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="performance" className="space-y-4">
+            <ServerPerformance
+              servers={servers}
+              performanceData={performanceData}
+              onRefreshPerformance={fetchServerPerformance}
+              isLoadingPerformance={isLoadingPerformance}
+            />
+          </TabsContent>
+        </Tabs>
+      )}
 
       {/* Edit Server Dialog */}
       <Dialog open={!!editingServer} onOpenChange={() => setEditingServer(null)}>
@@ -477,141 +844,23 @@ export default function ServerManagement() {
             <DialogTitle>Edit Server</DialogTitle>
             <DialogDescription>Update server configuration and settings</DialogDescription>
           </DialogHeader>
-          <ServerForm formData={formData} setFormData={setFormData} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingServer(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateServer}>Update Server</Button>
-          </DialogFooter>
+          <ServerForm
+            isEdit
+            defaultValues={editingServer ? {
+              serverName: editingServer.serverName,
+              hostName: editingServer.hostName,
+              ipAddress: editingServer.ipAddress,
+              apiKey: editingServer.apiKey,
+              location: editingServer.location,
+              controlPanel: editingServer.controlPanel,
+              maxAmount: editingServer.maxAmount || "",
+              status: editingServer.status
+            } : undefined}
+            onSubmit={handleUpdateServer}
+            isLoading={isLoading}
+          />
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-function ServerForm({ formData, setFormData }: any) {
-  return (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Server Name</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Web Server 01"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="hostname">Hostname</Label>
-          <Input
-            id="hostname"
-            value={formData.hostname}
-            onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
-            placeholder="web01.hostpanel.com"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="ipAddress">IP Address</Label>
-          <Input
-            id="ipAddress"
-            value={formData.ipAddress}
-            onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
-            placeholder="192.168.1.10"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="location">Location</Label>
-          <Input
-            id="location"
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            placeholder="US East (Virginia)"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="provider">Provider</Label>
-          <Select value={formData.provider} onValueChange={(value) => setFormData({ ...formData, provider: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select provider" />
-            </SelectTrigger>
-            <SelectContent>
-              {serverProviders.map((provider) => (
-                <SelectItem key={provider.value} value={provider.label}>
-                  {provider.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="os">Operating System</Label>
-          <Select value={formData.os} onValueChange={(value) => setFormData({ ...formData, os: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select OS" />
-            </SelectTrigger>
-            <SelectContent>
-              {operatingSystems.map((os) => (
-                <SelectItem key={os.value} value={os.label}>
-                  {os.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="controlPanel">Control Panel</Label>
-          <Select
-            value={formData.controlPanel}
-            onValueChange={(value) => setFormData({ ...formData, controlPanel: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select control panel" />
-            </SelectTrigger>
-            <SelectContent>
-              {controlPanels.map((panel) => (
-                <SelectItem key={panel.value} value={panel.label}>
-                  {panel.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="maxAccounts">Max Accounts</Label>
-          <Input
-            id="maxAccounts"
-            type="number"
-            value={formData.maxAccounts}
-            onChange={(e) => setFormData({ ...formData, maxAccounts: e.target.value })}
-            placeholder="100"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="online">Online</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
-            <SelectItem value="offline">Offline</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
     </div>
   )
 }

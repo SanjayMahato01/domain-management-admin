@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-import axios from 'axios';
 import { verifyAdmin } from '@/lib/admin-auth';
 import prisma from '@/lib/prisma';
-
 
 // GET - Fetch all registrars
 export async function GET(request: NextRequest) {
