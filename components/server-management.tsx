@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -77,7 +76,7 @@ const serverSchema = z.object({
     .max(100, "Location must be less than 100 characters"),
 
   controlPanel: z.enum(['CPANEL', 'PLESK', 'DIRECTADMIN', 'CYBERPANEL'], {
-    required_error: "Please select a control panel"
+    message: "Please select a control panel"
   }),
 
   maxAmount: z.string()
@@ -85,8 +84,12 @@ const serverSchema = z.object({
     .refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
       "Max amount must be a positive number"),
 
-  status: z.enum(['ONLINE', 'OFFLINE', 'MAINTENANCE']).default('ONLINE')
+  status: z.enum(['ONLINE', 'OFFLINE', 'MAINTENANCE'])
 })
+
+type PerformanceData = {
+  [id: string]: number;
+};
 
 type ServerFormData = z.infer<typeof serverSchema>
 
@@ -120,15 +123,14 @@ function ServerForm({
   const form = useForm<ServerFormData>({
     resolver: zodResolver(serverSchema),
     defaultValues: {
-      serverName: "",
-      hostName: "",
-      ipAddress: "",
-      apiKey: "",
-      location: "",
-      controlPanel: "CPANEL",
-      maxAmount: "",
-      status: "ONLINE",
-      ...defaultValues
+      serverName: defaultValues?.serverName ?? "",
+      hostName: defaultValues?.hostName ?? "",
+      ipAddress: defaultValues?.ipAddress ?? "",
+      apiKey: defaultValues?.apiKey ?? "",
+      location: defaultValues?.location ?? "",
+      controlPanel: defaultValues?.controlPanel ?? "CPANEL",
+      maxAmount: defaultValues?.maxAmount ?? "",
+      status: defaultValues?.status ?? "ONLINE",
     }
   })
 
@@ -340,7 +342,7 @@ function ServerOverview({
     }
   }
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: "ONLINE" | "MAINTENANCE"  | "OFFLINE") => {
     switch (status) {
       case "ONLINE":
         return "default"
@@ -607,12 +609,12 @@ function ServerPerformance({
 
 // Main Component
 export default function ServerManagement() {
-  const [servers, setServers] = useState([])
-  const [performanceData, setPerformanceData] = useState({})
+  const [servers, setServers] = useState<any[]>([])
+  const [performanceData, setPerformanceData] = useState<PerformanceData>({})
   const [isLoadingPerformance, setIsLoadingPerformance] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingServer, setEditingServer] = useState(null)
+  const [editingServer, setEditingServer] = useState<any>(null)
 
   // Fetch servers on mount
   useEffect(() => {
@@ -708,11 +710,7 @@ export default function ServerManagement() {
         )
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update server",
-        variant: "destructive",
-      })
+      toast.error( "Failed to update server")
     } finally {
       setIsLoading(false)
     }
@@ -735,6 +733,8 @@ export default function ServerManagement() {
           delete newData[id]
           return newData
         })
+
+
         toast.success( "Server deleted successfully")
       } else {
         toast.error( result.error || "Failed to delete server",

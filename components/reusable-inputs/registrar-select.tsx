@@ -45,13 +45,12 @@ export function RegistrarSelect({
       setLoading(true)
       setError(null)
 
-      const url = `/api/registrars/fetch-active-registrar?filterActive=${filterActive}`
+      const url = `/api/registrar/fetch-active-registrar?filterActive=${filterActive}`
       const res = await fetch(url)
 
       if (!res.ok) {
         throw new Error("Failed to fetch registrars")
       }
-
       const data = await res.json()
       setRegistrars(data.data || [])
     } catch (err) {
@@ -74,17 +73,16 @@ export function RegistrarSelect({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label htmlFor="registrar">
-          {label}
-          {required && <span className="text-destructive ml-1">*</span>}
-        </Label>
-        {showRefresh && (
-          <Button type="button" variant="ghost" size="sm" onClick={handleRefresh} disabled={loading}>
-            <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-        )}
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="registrar">
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+
+        </div>
       </div>
+
 
       <Select value={value} onValueChange={onValueChange} disabled={loading}>
         <SelectTrigger id="registrar">
@@ -96,9 +94,8 @@ export function RegistrarSelect({
               <div className="flex items-center justify-between">
                 <span>{registrar.name}</span>
                 <span
-                  className={`ml-2 h-2 w-2 rounded-full ${
-                    registrar.status === "ACTIVE" ? "bg-green-500" : "bg-gray-400"
-                  }`}
+                  className={`ml-2 h-2 w-2 rounded-full ${registrar.status === "ACTIVE" ? "bg-green-500" : "bg-gray-400"
+                    }`}
                 />
               </div>
             </SelectItem>
