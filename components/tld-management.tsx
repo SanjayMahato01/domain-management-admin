@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Edit, Trash2, Globe, DollarSign, Calendar, Building, RefreshCw, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
-import { RegistrarSelect } from "@/components/reusable-inputs/registrar-select"
+import { RegistrarSelect } from "@/components/reuseable-inputs/registrar-select"
 
 interface TLD {
   id: string

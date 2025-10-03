@@ -15,6 +15,7 @@ import HostingPackages from "@/components/hosting-packages"
 import ServerManagement from "@/components/server-management"
 import TLDManagement from "@/components/tld-management"
 import Billing from "@/components/billings"
+import { SettingsPage } from "@/components/settings-page"
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
@@ -44,6 +45,8 @@ export default function AdminDashboard() {
         return <HostingPackages />
       case "billings":
         return <Billing />
+      case "settings":
+        return <SettingsPage />
       default:
         return <Dashboard />
     }

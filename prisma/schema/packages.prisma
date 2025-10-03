@@ -1,0 +1,39 @@
+
+model Packages {
+  id                  String         @id @default(cuid())
+  name                String        
+  providerPackageName String?       
+  description         String
+  diskSpace           Int        
+  bandwidth           BigInt        
+  domains             Int
+  emailAccounts       Int
+  databases           Int
+  features            String         
+  billingCycle        BillingCycle  
+  price               Decimal      
+  status              PackageStatus  @default(ACTIVE)
+
+  serverId            String
+  server              Server         @relation(fields: [serverId], references: [id])
+
+  hostingPurchases    HostingPurchased[] 
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@map("packages")
+}
+
+
+
+enum PackageStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+  QUARTERLY
+}
