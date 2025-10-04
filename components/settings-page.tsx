@@ -6,9 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Save, DollarSign, Percent, Building2, Mail, Bell, CreditCard, FileText, Server } from "lucide-react"
+import { Save, DollarSign, Percent } from "lucide-react"
 import { toast } from "sonner"
 
 const currencies = [
@@ -22,7 +20,7 @@ export function SettingsPage() {
   const [taxValue, setTaxValue] = useState("20")
   const [taxType, setTaxType] = useState<"percentage" | "fixed">("percentage")
   const [loading, setLoading] = useState(false)
-
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     loadSettings()
@@ -30,6 +28,8 @@ export function SettingsPage() {
 
   const loadSettings = async () => {
     try {
+      setIsLoading(true)
+      
       // Load tax settings
       const taxResponse = await fetch('/api/settings/tax/get-tax')
       if (taxResponse.ok) {
@@ -48,6 +48,8 @@ export function SettingsPage() {
       }
     } catch (error) {
       console.error('Failed to load settings:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -84,6 +86,61 @@ export function SettingsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+          <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          {/* Currency Settings Skeleton */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="space-y-1">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-56 bg-gray-200 rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tax Configuration Skeleton */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="space-y-1">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-56 bg-gray-200 rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Save Button Skeleton */}
+        <div className="flex justify-end pt-4 border-t border-gray-200">
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
   }
 
   return (

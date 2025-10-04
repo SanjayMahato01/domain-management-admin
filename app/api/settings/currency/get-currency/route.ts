@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
        if ("error" in adminCheck) {
          return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status })
        }
-     console.log(adminCheck)
+    
     const admin = await prisma.admin.findFirst({
       select: { currency: true }
     })

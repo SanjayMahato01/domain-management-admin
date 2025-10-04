@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard,Users, Globe, Server, Mail, BarChart3, Settings, Menu, X, ChevronLeft, MonitorSpeaker, Database, PackageSearch, BookA, WebhookIcon, DollarSign } from "lucide-react"
+import { LayoutDashboard,Users, Globe, Server, Mail, BarChart3, Settings, Menu, X, ChevronLeft, MonitorSpeaker, Database, PackageSearch, BookA, WebhookIcon, DollarSign, MessageCircle } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "dashboard", icon: LayoutDashboard },
@@ -18,6 +18,7 @@ const navigation = [
   { name: "Email", href: "email", icon: Mail },
   { name: "Analytics", href: "analytics", icon: BarChart3 },
   { name: "Billings", href: "billings", icon: DollarSign },
+  { name: "Support", href: "support", icon: MessageCircle },
   { name: "Settings", href: "settings", icon: Settings },
 ]
 

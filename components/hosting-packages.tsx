@@ -413,19 +413,19 @@ export default function HostingPackagesPage() {
                 <div className="text-center p-2 rounded-lg bg-muted/50">
                   <div className="text-xs text-muted-foreground mb-1">Monthly</div>
                   <div className="text-lg font-bold text-primary">
-                   {currency === "INR" ? "₹" : "$"}{convertPrice(pkg.monthly?.price || 0, currency)}
+                   {currency === "INR" ? "₹" : "$"}{Math.ceil(convertPrice(pkg.monthly?.price || 0, currency))}
                   </div>
                 </div>
                 <div className="text-center p-2 rounded-lg bg-muted/50">
                   <div className="text-xs text-muted-foreground mb-1">Quarterly</div>
                   <div className="text-lg font-bold text-primary">
-                    {currency === "INR" ? "₹" : "$"}{convertPrice(pkg.quarterly?.price || 0, currency)}
+                    {currency === "INR" ? "₹" : "$"}{Math.ceil(convertPrice(pkg.quarterly?.price || 0, currency))}
                   </div>
                 </div>
                 <div className="text-center p-2 rounded-lg bg-muted/50">
                   <div className="text-xs text-muted-foreground mb-1">Yearly</div>
                   <div className="text-lg font-bold text-primary">
-                   {currency === "INR" ? "₹" : "$"}{convertPrice(pkg.yearly?.price || 0, currency)}
+                   {currency === "INR" ? "₹" : "$"}{Math.ceil(convertPrice(pkg.yearly?.price || 0, currency))}
                   </div>
                 </div>
               </div>

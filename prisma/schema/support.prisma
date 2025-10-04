@@ -1,0 +1,42 @@
+model Ticket {
+  id        String       @id @default(cuid())
+  ticketId  String       @unique // Custom ticket ID like TKT-001
+  subject   String
+  category  TicketCategory
+  status    TicketStatus @default(OPEN)
+  date      DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id])
+  userId    String
+  messages  Message[]
+
+  @@map("tickets")
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  sender    SenderType
+  content   String
+  timestamp DateTime    @default(now())
+  ticket    Ticket      @relation(fields: [ticketId], references: [id])
+  ticketId  String
+
+  @@map("messages")
+}
+
+enum TicketCategory {
+  DOMAIN
+  BILLING
+  TECHNICAL
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  RESOLVED
+  PENDING
+}
+
+enum SenderType {
+  USER
+  ADMIN
+}

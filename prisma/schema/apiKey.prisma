@@ -1,0 +1,9 @@
+model ApiKey {
+  id        String             @id @default(cuid())
+  provider  DomainProviderName
+  key       String             @unique
+  userId    String             // Foreign key
+  user      User               @relation(fields: [userId], references: [id])
+
+   @@map("apiKeys")
+}

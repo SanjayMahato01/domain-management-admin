@@ -32,6 +32,8 @@ model User {
   hostingsPurchased        HostingPurchased[]
   accounts                 Account[]
   billings                 Billing[]
+  supportTicket            Ticket[]
+  apiKeys                  ApiKey[]
   domainPurchased          DomainPurchased[]
   status                   UserStatus?        @map("ACTIVE")
 
@@ -65,7 +67,7 @@ model Cart {
 
 model DomainPurchased {
   id                String             @id @default(cuid())
-  registrarId       Int
+  registrarId       Int?
   userId            String
   firstName         String
   lastName          String
@@ -84,7 +86,7 @@ model DomainPurchased {
   providerName      DomainProviderName @default(DREAMSCAPE)
   billing           Billing?
   user              User               @relation(fields: [userId], references: [id])
-  registrar         Registrar          @relation(fields: [registrarId], references: [id])
+  registrar         Registrar?         @relation(fields: [registrarId], references: [id])
 
   @@index([userId])
   @@index([razorpayOrderId])

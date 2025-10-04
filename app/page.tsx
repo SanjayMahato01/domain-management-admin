@@ -16,6 +16,7 @@ import ServerManagement from "@/components/server-management"
 import TLDManagement from "@/components/tld-management"
 import Billing from "@/components/billings"
 import { SettingsPage } from "@/components/settings-page"
+import { SupportTickets } from "@/components/support-page"
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
@@ -47,6 +48,8 @@ export default function AdminDashboard() {
         return <Billing />
       case "settings":
         return <SettingsPage />
+      case "support":
+        return <SupportTickets />
       default:
         return <Dashboard />
     }
