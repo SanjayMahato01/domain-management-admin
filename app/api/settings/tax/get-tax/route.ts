@@ -1,10 +1,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import  prisma  from '@/lib/prisma'
+import prisma from '@/lib/prisma'
+import { verifyAdmin } from '@/lib/admin-auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Get or create the single tax record
+    const adminCheck = await verifyAdmin(request)
+    if ("error" in adminCheck) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status })
+    }
     let tax = await prisma.tax.findUnique({
       where: { id: "single" }
     })
@@ -15,7 +19,7 @@ export async function GET() {
         data: {
           id: "single",
           name: "VAT",
-          value: "20"
+          value: "5"
         }
       })
     }

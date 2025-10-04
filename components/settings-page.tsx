@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Save, DollarSign, Percent, Building2, Mail, Bell, CreditCard, FileText, Server } from "lucide-react"
+import { toast } from "sonner"
 
 const currencies = [
   { code: "INR", symbol: "₹", name: "Indian Rupee" },
@@ -22,7 +23,7 @@ export function SettingsPage() {
   const [taxType, setTaxType] = useState<"percentage" | "fixed">("percentage")
   const [loading, setLoading] = useState(false)
 
-  // Load settings on component mount
+
   useEffect(() => {
     loadSettings()
   }, [])
@@ -39,8 +40,10 @@ export function SettingsPage() {
 
       // Load currency settings
       const currencyResponse = await fetch('/api/settings/currency/get-currency')
+    
       if (currencyResponse.ok) {
         const currencyData = await currencyResponse.json()
+        console.log(currencyData)
         setSelectedCurrency(currencyData.currency)
       }
     } catch (error) {
@@ -52,7 +55,7 @@ export function SettingsPage() {
     setLoading(true)
     try {
       // Save tax settings
-      await fetch('/api/settings/tax/get-tax', {
+      await fetch('/api/settings/tax/update-tax', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +77,7 @@ export function SettingsPage() {
         }),
       })
 
-      alert("Settings saved successfully!")
+      toast.success("Settings saved successfully!")
     } catch (error) {
       console.error('Failed to save settings:', error)
       alert("Failed to save settings!")

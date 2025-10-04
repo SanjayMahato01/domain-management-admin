@@ -21,6 +21,8 @@ import { Plus, Edit, Trash2, Server, HardDrive, Cpu, RefreshCw, Loader2 } from "
 import { ServerSelect } from "@/components/reuseable-inputs/server-select"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAdminCurrency } from "@/hooks/useAdminCurrency"
+import { convertPrice } from "@/lib/currencyUtils"
 
 interface Package {
   id: string
@@ -73,6 +75,7 @@ interface WHMPackage {
 }
 
 export default function HostingPackagesPage() {
+
   const [packages, setPackages] = useState<Package[]>([])
   const [groupedPackages, setGroupedPackages] = useState<GroupedPackage[]>([])
   const [loading, setLoading] = useState(true)
@@ -82,6 +85,7 @@ export default function HostingPackagesPage() {
   const [whmPackages, setWhmPackages] = useState<WHMPackage[]>([])
   const [fetchingWHMPackages, setFetchingWHMPackages] = useState(false)
   const [selectedWHMPackage, setSelectedWHMPackage] = useState<string>("")
+  const currency = useAdminCurrency()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -405,22 +409,23 @@ export default function HostingPackagesPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2 border-b pb-4">
-                <h4 className="text-sm font-semibold text-muted-foreground">Pricing</h4>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center p-2 rounded-lg bg-muted/50">
-                    <div className="text-xs text-muted-foreground mb-1">Monthly</div>
-                    <div className="text-lg font-bold text-primary">{pkg.monthly ? `$${pkg.monthly.price}` : "—"}</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-2 rounded-lg bg-muted/50">
+                  <div className="text-xs text-muted-foreground mb-1">Monthly</div>
+                  <div className="text-lg font-bold text-primary">
+                   {currency === "INR" ? "₹" : "$"}{convertPrice(pkg.monthly?.price || 0, currency)}
                   </div>
-                  <div className="text-center p-2 rounded-lg bg-muted/50">
-                    <div className="text-xs text-muted-foreground mb-1">Quarterly</div>
-                    <div className="text-lg font-bold text-primary">
-                      {pkg.quarterly ? `$${pkg.quarterly.price}` : "—"}
-                    </div>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/50">
+                  <div className="text-xs text-muted-foreground mb-1">Quarterly</div>
+                  <div className="text-lg font-bold text-primary">
+                    {currency === "INR" ? "₹" : "$"}{convertPrice(pkg.quarterly?.price || 0, currency)}
                   </div>
-                  <div className="text-center p-2 rounded-lg bg-muted/50">
-                    <div className="text-xs text-muted-foreground mb-1">Yearly</div>
-                    <div className="text-lg font-bold text-primary">{pkg.yearly ? `$${pkg.yearly.price}` : "—"}</div>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/50">
+                  <div className="text-xs text-muted-foreground mb-1">Yearly</div>
+                  <div className="text-lg font-bold text-primary">
+                   {currency === "INR" ? "₹" : "$"}{convertPrice(pkg.yearly?.price || 0, currency)}
                   </div>
                 </div>
               </div>
@@ -617,7 +622,7 @@ function PackageForm({
               <SelectValue placeholder="Choose a package to auto-fill details" />
             </SelectTrigger>
             <SelectContent>
-              {whmPackages.map((pkg:any) => (
+              {whmPackages.map((pkg: any) => (
                 <SelectItem key={pkg.name} value={pkg.name}>
                   {pkg.name} - {pkg.QUOTA === "unlimited" ? "Unlimited" : `${pkg.QUOTA}MB`} Disk,{" "}
                   {pkg.BWLIMIT === "unlimited" ? "Unlimited" : `${pkg.BWLIMIT}MB`} Bandwidth
